@@ -60,7 +60,10 @@ export function ProductoLista({ onSeleccionarProducto, recargarKey }: ProductoLi
                     <tbody>
                         {productos.map((producto) => (
                             <tr key={producto.id}>
-                                <td className="product-name">{producto.nombre}</td>
+                                <td className="product-name">
+                                    {producto.nombre}
+                                    <span className="product-id">{producto.id.slice(0, 6)}</span>
+                                </td>
                                 <td className="product-price">${producto.precio}</td>
                                 <td>
                                     <span

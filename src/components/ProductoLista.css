@@ -133,3 +133,33 @@
   border-radius: 50%;
   background-color: currentColor;
 }
+
+/* Product ID badge */
+.product-id {
+  display: block;
+  font-size: 11px;
+  font-weight: 400;
+  color: #bebbba;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.3px;
+  margin-top: 2px;
+}
+
+/* Edit button */
+.btn-editar {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 16px;
+  border: 1.5px solid var(--color-ash);
+  border-radius: var(--radius-pill);
+  background-color: var(--color-white);
+  color: var(--color-ink);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-editar:hover {
+  background-color: var(--color-marigold);
+  border-color: var(--color-marigold);
+}

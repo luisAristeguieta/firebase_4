@@ -81,7 +81,7 @@ export function ProductoForm({ productoSeleccionado, onProductoGuardado, onCance
 
     return (
         <div className="form-wrapper">
-            <div className="form-card">
+            <div className={`form-card ${modoEdicion ? "form-card--editing" : ""}`}>
                 <h2 className="form-card__title">
                     {modoEdicion ? "Editar Producto" : "Registrar Producto"}
                 </h2>
