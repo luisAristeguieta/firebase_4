@@ -1,12 +1,38 @@
-import { useState, type SyntheticEvent } from "react";
-import { crearProducto } from "../services/productoService";
+import { useEffect, useState, type SyntheticEvent } from "react";
+import { crearProducto, actualizarProducto, type Producto } from "../services/productoService";
 import "./ProductoForm.css";
 
-export function ProductoForm() {
+interface ProductoFormProps {
+    productoSeleccionado?: Producto | null;
+    onProductoGuardado?: () => void;
+    onCancelarEdicion?: () => void;
+}
+
+export function ProductoForm({ productoSeleccionado, onProductoGuardado, onCancelarEdicion }: ProductoFormProps) {
     const [nombre, setNombre] = useState("");
     const [precio, setPrecio] = useState("");
     const [stock, setStock] = useState("");
     const [guardando, setGuardando] = useState(false);
+
+    const modoEdicion = productoSeleccionado !== null && productoSeleccionado !== undefined;
+
+    useEffect(() => {
+        if (productoSeleccionado) {
+            setNombre(productoSeleccionado.nombre);
+            setPrecio(String(productoSeleccionado.precio));
+            setStock(String(productoSeleccionado.stock));
+        } else {
+            setNombre("");
+            setPrecio("");
+            setStock("");
+        }
+    }, [productoSeleccionado]);
+
+    const limpiarFormulario = () => {
+        setNombre("");
+        setPrecio("");
+        setStock("");
+    };
 
     const guardarProducto = async (e: SyntheticEvent<HTMLFormElement, SubmitEvent>) => {
         e.preventDefault();
@@ -20,18 +46,26 @@ export function ProductoForm() {
             setGuardando(true);
             const nombreLimpio = nombre.trim();
 
-            const productoId = await crearProducto(
-                nombreLimpio,
-                Number(precio),
-                Number(stock)
-            );
+            if (modoEdicion) {
+                await actualizarProducto(productoSeleccionado.id, {
+                    nombre: nombreLimpio,
+                    precio: Number(precio),
+                    stock: Number(stock),
+                });
+                console.log("Producto actualizado:", productoSeleccionado.id);
+                alert(`Producto "${nombreLimpio}" actualizado correctamente.`);
+            } else {
+                const productoId = await crearProducto(
+                    nombreLimpio,
+                    Number(precio),
+                    Number(stock)
+                );
+                console.log("Producto creado:", productoId);
+                alert(`Producto "${nombreLimpio}" guardado correctamente.`);
+            }
 
-            console.log("Producto creado: ", productoId);
-            alert(`Producto "${nombreLimpio}" guardado correctamente.`);
-
-            setNombre("");
-            setPrecio("");
-            setStock("");
+            limpiarFormulario();
+            onProductoGuardado?.();
         } catch (error) {
             console.error("Error al guardar producto:", error);
             alert("Ocurrió un error al guardar el producto en Firestore.");
@@ -40,10 +74,17 @@ export function ProductoForm() {
         }
     };
 
+    const cancelarEdicion = () => {
+        limpiarFormulario();
+        onCancelarEdicion?.();
+    };
+
     return (
         <div className="form-wrapper">
             <div className="form-card">
-                <h2 className="form-card__title">Registrar Producto</h2>
+                <h2 className="form-card__title">
+                    {modoEdicion ? "Editar Producto" : "Registrar Producto"}
+                </h2>
                 <form onSubmit={guardarProducto}>
                     <div className="form-field">
                         <label htmlFor="nombre">Nombre</label>
@@ -75,9 +116,24 @@ export function ProductoForm() {
                             onChange={(e) => setStock(e.target.value)}
                         />
                     </div>
-                    <button type="submit" className="form-submit" disabled={guardando}>
-                        {guardando ? "Guardando..." : "Guardar"}
-                    </button>
+                    <div className="form-actions">
+                        <button type="submit" className="form-submit" disabled={guardando}>
+                            {guardando
+                                ? "Guardando..."
+                                : modoEdicion
+                                    ? "Actualizar"
+                                    : "Guardar"}
+                        </button>
+                        {modoEdicion && (
+                            <button
+                                type="button"
+                                className="form-cancel"
+                                onClick={cancelarEdicion}
+                            >
+                                Cancelar
+                            </button>
+                        )}
+                    </div>
                 </form>
             </div>
         </div>

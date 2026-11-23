@@ -6,14 +6,20 @@ import type { Producto } from './services/productoService'
 
 function App() {
   const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null);
-  const [recargarKey, _setRecargarKey] = useState(0);
+  const [recargarKey, setRecargarKey] = useState(0);
 
   const seleccionarProducto = (producto: Producto) => {
-    console.log("Producto seleccionado para editar:", producto);
     setProductoSeleccionado(producto);
   };
 
-  console.log("Modo:", productoSeleccionado ? "EDITAR" : "CREAR");
+  const handleProductoGuardado = () => {
+    setProductoSeleccionado(null);
+    setRecargarKey((prev) => prev + 1);
+  };
+
+  const handleCancelarEdicion = () => {
+    setProductoSeleccionado(null);
+  };
 
   return (
     <div className="app-wrapper">
@@ -23,7 +29,11 @@ function App() {
       </header>
 
       <main className="app-content">
-        <ProductoForm />
+        <ProductoForm
+          productoSeleccionado={productoSeleccionado}
+          onProductoGuardado={handleProductoGuardado}
+          onCancelarEdicion={handleCancelarEdicion}
+        />
         <ProductoLista
           onSeleccionarProducto={seleccionarProducto}
           recargarKey={recargarKey}
