@@ -2,7 +2,12 @@ import { useEffect, useState } from "react";
 import { obtenerProductos, type Producto } from "../services/productoService";
 import "./ProductoLista.css";
 
-export function ProductoLista() {
+interface ProductoListaProps {
+    onSeleccionarProducto?: (producto: Producto) => void;
+    recargarKey?: number;
+}
+
+export function ProductoLista({ onSeleccionarProducto, recargarKey }: ProductoListaProps) {
     const [productos, setProductos] = useState<Producto[]>([]);
     const [cargando, setCargando] = useState(true);
 
@@ -20,7 +25,7 @@ export function ProductoLista() {
         };
 
         cargarProductos();
-    }, []);
+    }, [recargarKey]);
 
     if (cargando) {
         return (
@@ -49,6 +54,7 @@ export function ProductoLista() {
                             <th>Producto</th>
                             <th>Precio</th>
                             <th>Stock</th>
+                            <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -67,6 +73,14 @@ export function ProductoLista() {
                                         <span className="stock-badge__dot"></span>
                                         {producto.stock}
                                     </span>
+                                </td>
+                                <td>
+                                    <button
+                                        className="btn-editar"
+                                        onClick={() => onSeleccionarProducto?.(producto)}
+                                    >
+                                        Editar
+                                    </button>
                                 </td>
                             </tr>
                         ))}
