@@ -1,13 +1,14 @@
-# 📦 Taller Práctico 3 — Operaciones CREATE y READ con React, TypeScript y Cloud Firestore
+# 📦 Taller Práctico N° 4 — Update Firestore con React, TypeScript y Cloud Firestore
 
-> Actividad académica que implementa un sistema de inventario de productos conectado a **Cloud Firestore**, practicando las operaciones de escritura (`addDoc`) y lectura (`getDocs`) en una aplicación React + TypeScript + Vite.
+> Actividad académica que extiende el sistema de inventario de productos con la operación **UPDATE** sobre **Cloud Firestore**, practicando `updateDoc` junto con las operaciones existentes de escritura (`addDoc`) y lectura (`getDocs`) en una aplicación React + TypeScript + Vite.
 
 ## 🎯 Objetivo
 
-Comprender el flujo de datos unidireccional entre componentes React y una base de datos NoSQL en la nube (Firestore), aplicando:
+Implementar la operación de actualización de documentos en Firestore manteniendo el flujo unidireccional de datos, el tipado estricto en TypeScript y un formulario inteligente con modo dual (CREATE / UPDATE):
 
 - **CREATE:** Capturar datos del formulario y persistirlos como documentos en una colección de Firestore.
 - **READ:** Consultar la colección al montar el componente y renderizar la lista en la UI.
+- **UPDATE:** Seleccionar un producto existente, precargar sus datos en el formulario y actualizar el documento en Firestore con `updateDoc`.
 
 ## 📐 Diagrama de Flujo
 
@@ -27,32 +28,44 @@ Comprender el flujo de datos unidireccional entre componentes React y una base d
 │  (colección:       (SDK)         (servicio)              (tabla UI)  │
 │   "productos")                                                      │
 └──────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────┐
+│                        FLUJO UPDATE                                 │
+│                                                                     │
+│  ProductoLista ──► [Editar] ──► ProductoForm ──► actualizarProducto()│
+│  (selección)       (callback)   (modo edición)   (servicio)          │
+│                                                                     │
+│  actualizarProducto() ──► doc() + updateDoc() ──► Firestore 🔥      │
+│  (servicio)                (SDK)                   (documento        │
+│                                                     actualizado)    │
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
 ## 📁 Estructura del Proyecto
 
 ```
-taller3-firebase-read/
+taller4-firebase-update/
 ├── Entregable/
-│   ├── bd firestore.PNG           # Captura de la consola Firestore
-│   └── Vista General.PNG          # Captura de la interfaz de la app
+│   ├── Antes de Editar.PNG        # Captura antes de editar un producto
+│   ├── Editando.PNG               # Captura del formulario en modo edición
+│   └── Editado.PNG                # Captura del producto ya actualizado
 ├── public/
 │   └── image.png                  # Favicon personalizado
 ├── src/
 │   ├── components/
-│   │   ├── ProductoForm.tsx       # Formulario CREATE
+│   │   ├── ProductoForm.tsx       # Formulario dual CREATE / UPDATE
 │   │   ├── ProductoForm.css
-│   │   ├── ProductoLista.tsx      # Lista READ
+│   │   ├── ProductoLista.tsx      # Lista READ con botón [Editar]
 │   │   └── ProductoLista.css
 │   ├── services/
-│   │   └── productoService.ts     # Lógica Firestore (addDoc / getDocs)
+│   │   └── productoService.ts     # Lógica Firestore (addDoc / getDocs / updateDoc)
 │   ├── firebase.ts                # Inicialización de Firebase
-│   ├── App.tsx                    # Componente raíz
+│   ├── App.tsx                    # Componente raíz y orquestación
 │   ├── App.css
 │   ├── index.css                  # Tokens de diseño y reset global
 │   └── main.tsx                   # Entry point React
-├── .env                           # Variables de entorno (no versionado)
 ├── DESIGN.md                      # Sistema de diseño visual (Craft Docs)
+├── roadmap.md                     # Roadmap de implementación por fases
 ├── index.html                     # HTML con Google Fonts y favicon
 ├── package.json
 ├── tsconfig.json
@@ -73,8 +86,8 @@ taller3-firebase-read/
 ### 1. Clonar el repositorio
 
 ```bash
-git clone <https://github.com/luisAristeguieta/firebase_3>
-cd taller3-firebase-read
+git clone <https://github.com/luisAristeguieta/firebase_4>
+cd taller4-firebase-update
 ```
 
 ### 2. Instalar dependencias
@@ -116,18 +129,22 @@ npm run build
 
 | Captura | Descripción |
 |---------|-------------|
-| ![Vista General](Entregable/Vista%20General.PNG) | Interfaz completa de la aplicación con el formulario de registro y la tabla de productos. |
-| ![Base de Datos Firestore](Entregable/bd%20firestore.PNG) | Consola de Cloud Firestore mostrando la colección `productos` con los documentos registrados. |
+| ![Antes de Editar](Entregable/Antes%20de%20Editar.PNG) | Vista de la lista de productos antes de iniciar la edición, con el botón [Editar] visible en cada fila. |
+| ![Editando](Entregable/Editando.PNG) | Formulario en modo edición con los datos del producto precargados, botón "Actualizar" y opción de "Cancelar". |
+| ![Editado](Entregable/Editado.PNG) | Producto actualizado exitosamente, reflejando los cambios en la lista y en Cloud Firestore. |
 
 ## 📋 Componentes Principales
 
 ### `ProductoForm`
-Formulario controlado con estados `nombre`, `precio` y `stock`. Al enviar, llama a `crearProducto()` del servicio, que ejecuta `addDoc()` para crear un documento en la colección `"productos"` de Firestore.
+Formulario inteligente con **modo dual**:
+- **Modo CREATE** (`productoSeleccionado === null`): campos vacíos, botón "Guardar", llama a `crearProducto()`.
+- **Modo UPDATE** (`productoSeleccionado !== null`): `useEffect` precarga los datos, botón "Actualizar" + "Cancelar", llama a `actualizarProducto()`.
 
 ### `ProductoLista`
-Al montarse (`useEffect`), llama a `obtenerProductos()` del servicio, que ejecuta `getDocs()` para obtener todos los documentos. Muestra la información en una tabla con columnas **Producto**, **Precio** y **Stock** (con badge de disponibilidad).
+Al montarse (`useEffect`), llama a `obtenerProductos()`. Muestra la información en una tabla con columnas **Producto** (con ID visible), **Precio**, **Stock** y **Acciones** (botón [Editar]). Se refresca automáticamente al crear o editar un producto mediante `recargarKey`.
 
 ### `productoService.ts`
 Capa de servicio que encapsula las operaciones de Firestore:
 - `crearProducto(nombre, precio, stock)` → `addDoc()`
 - `obtenerProductos()` → `getDocs()`
+- `actualizarProducto(id, datos)` → `doc()` + `updateDoc()`
